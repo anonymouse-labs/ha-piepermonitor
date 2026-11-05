@@ -4,7 +4,7 @@
 
 Live Dutch P2000 emergency alerts in Home Assistant, from the structured **AlarmeringDroid API**. Like [P2Kflex](https://live.p2kflex.nl/), you decide what you follow — entirely from the UI: your own sensors per region or service, alarms for your own capcodes or vehicles, and a live dashboard card.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Anonymouse0104&repository=ha-p2000-monitor&category=integration) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/anonymouse0501)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=anonymouse-labs&repository=ha-p2000-monitor&category=integration) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/anonymouse0501)
 
 ## Features
 
@@ -19,7 +19,7 @@ Live Dutch P2000 emergency alerts in Home Assistant, from the structured **Alarm
 
 ## Installation
 
-1. In **HACS**, open the menu (⋮) → **Custom repositories**, add `https://github.com/Anonymouse0104/ha-p2000-monitor` as type **Integration**.
+1. In **HACS**, open the menu (⋮) → **Custom repositories**, add `https://github.com/anonymouse-labs/ha-p2000-monitor` as type **Integration**.
 2. Install **P2000 Monitor** and restart Home Assistant.
 3. Go to **Settings → Devices & services → Add integration → P2000 Monitor** and set up your first sensor.
 
@@ -61,7 +61,7 @@ Click **Follow capcode or vehicle**, give it a name and enter capcodes and/or ca
 - **Alarm** (`event.<name>_alarm`) — fires once per alert. In the automation editor pick *Entity → State* on it; the event data contains `message`, `pager_text`, `priority`, `vehicles`, `vehicle_types`, `city`, `latitude`/`longitude` and more.
 - **Active** (`binary_sensor.<name>_active`) — on for a set number of minutes after the last alarm; handy for a dashboard or a light.
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FAnonymouse0104%2Fha-p2000-monitor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fp2000_monitor%2Fp2000_alarm_notify.yaml)
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fanonymouse-labs%2Fha-p2000-monitor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fp2000_monitor%2Fp2000_alarm_notify.yaml)
 The **P2000 alarm melden** blueprint sends a push notification to your phone for a followed unit.
 
 ## Live dashboard

@@ -272,6 +272,6 @@ if (!customElements.get("p2000-live-card")) {
     name: "P2000 live",
     description: "Live P2000-meldingen met dienstkleuren, prioriteit, voertuigen en capcodes.",
     preview: true,
-    documentationURL: "https://github.com/Anonymouse0104/ha-p2000-monitor",
+    documentationURL: "https://github.com/anonymouse-labs/ha-p2000-monitor",
   });
 }

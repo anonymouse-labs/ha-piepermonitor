@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = "https://brandbase.hetbrandweerforum.nl"
 INDEX_URL = f"{BASE_URL}/voertuigen/regios/"
-USER_AGENT = "P2000-Monitor-HomeAssistant (+https://github.com/Anonymouse0104/ha-p2000-monitor)"
+USER_AGENT = "P2000-Monitor-HomeAssistant (+https://github.com/anonymouse-labs/ha-p2000-monitor)"
 REFRESH_AFTER = timedelta(days=7)
 RETRY_AFTER = timedelta(days=1)
 # robots.txt asks for a crawl delay of 10 seconds; stay above it.

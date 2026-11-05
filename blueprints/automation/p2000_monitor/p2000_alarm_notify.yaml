@@ -5,7 +5,7 @@ blueprint:
     voertuig van P2000 Monitor wordt gealarmeerd. Maak eerst in de integratie
     een regel aan via "Capcode of voertuig volgen".
   domain: automation
-  source_url: https://github.com/Anonymouse0104/ha-p2000-monitor/blob/main/blueprints/automation/p2000_monitor/p2000_alarm_notify.yaml
+  source_url: https://github.com/anonymouse-labs/ha-p2000-monitor/blob/main/blueprints/automation/p2000_monitor/p2000_alarm_notify.yaml
   input:
     alarm_entity:
       name: Alarm
