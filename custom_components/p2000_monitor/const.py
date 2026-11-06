@@ -1,4 +1,4 @@
-"""Constants for P2000 Monitor."""
+"""Constants for PieperMonitor."""
 
 DOMAIN = "p2000_monitor"
 
@@ -23,7 +23,11 @@ DISPLAY_PAGER = "pager"
 CONF_BRANDBASE = "brandbase"
 
 # The single config entry and its per-sensor subentries.
-HUB_TITLE = "P2000 Monitor"
+HUB_TITLE = "PieperMonitor"
+# Title of the hub entry before the rename to PieperMonitor (0.10). Entries
+# that still carry it get the new title on setup; nothing else changes.
+LEGACY_HUB_TITLE = "P2000 Monitor"
+WEBSITE_URL = "https://www.piepermonitor.nl"
 SUBENTRY_SENSOR = "sensor"
 # Follows capcodes and/or vehicles: an event entity per alarm plus an
 # "active" binary sensor, for automations without YAML.

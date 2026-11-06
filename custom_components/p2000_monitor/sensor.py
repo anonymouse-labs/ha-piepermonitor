@@ -1,4 +1,4 @@
-"""Sensor platform for P2000 Monitor."""
+"""Sensor platform for PieperMonitor."""
 from __future__ import annotations
 
 from typing import Any

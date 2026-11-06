@@ -15,7 +15,7 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from custom_components.p2000_monitor.const import DATA_FEED, DOMAIN
+from custom_components.p2000_monitor.const import DATA_FEED, DOMAIN, HUB_TITLE, LEGACY_HUB_TITLE
 from custom_components.p2000_monitor.coordinator import (
     API_URL,
     LOCAL_TZ,
@@ -52,7 +52,7 @@ def sensor(name, **data):
 
 def hub(*sensors, brandbase=False):
     # Brandbase off by default so tests never reach out; test_brandbase covers it.
-    return MockConfigEntry(domain=DOMAIN, version=2, title="P2000 Monitor", unique_id=DOMAIN,
+    return MockConfigEntry(domain=DOMAIN, version=2, title="PieperMonitor", unique_id=DOMAIN,
                            data={}, options={"brandbase": brandbase}, subentries_data=list(sensors))
 
 
@@ -356,13 +356,13 @@ async def test_initial_flow_creates_hub_with_first_sensor(hass, aioclient_mock):
     aioclient_mock.get(API_URL, json=feed(item(100, "P 1 BR woning Echt", ["1005258"])))
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"name": "P2000 Monitor", "all_services": True}
+        result["flow_id"], {"name": "PieperMonitor", "all_services": True}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     entry = hass.config_entries.async_entries(DOMAIN)[0]
     assert entry.state is ConfigEntryState.LOADED and len(entry.subentries) == 1
-    assert hass.states.get("sensor.p2000_monitor").state == "P 1 BR woning Echt"
+    assert hass.states.get("sensor.piepermonitor").state == "P 1 BR woning Echt"
     again = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert again["type"] is FlowResultType.ABORT
 
@@ -403,7 +403,7 @@ async def test_add_change_remove_sensor(hass, aioclient_mock):
 
 async def test_migrates_separate_entries_into_one(hass, aioclient_mock):
     ent_reg = er.async_get(hass)
-    old = [legacy_entry("P2000 Monitor"), legacy_entry("Brandweer Echt", capcodes=["1005258"]),
+    old = [legacy_entry(LEGACY_HUB_TITLE), legacy_entry("Brandweer Echt", capcodes=["1005258"]),
            legacy_entry("Limburg", regions=["15", "21"])]
     for e in old:
         e.add_to_hass(hass)
@@ -417,12 +417,22 @@ async def test_migrates_separate_entries_into_one(hass, aioclient_mock):
     entries = hass.config_entries.async_entries(DOMAIN)
     assert len(entries) == 1
     main = entries[0]
-    assert main.version == 2 and main.title == "P2000 Monitor" and main.state is ConfigEntryState.LOADED
-    assert sorted(s.title for s in main.subentries.values()) == ["Brandweer Echt", "Limburg", "P2000 Monitor"]
+    assert main.version == 2 and main.title == HUB_TITLE and main.state is ConfigEntryState.LOADED
+    assert sorted(s.title for s in main.subentries.values()) == ["Brandweer Echt", "Limburg", LEGACY_HUB_TITLE]
     for object_id in ("p2000_monitor", "brandweer_echt", "limburg"):
         reg = ent_reg.async_get(f"sensor.{object_id}")
         assert reg is not None and reg.config_entry_id == main.entry_id and reg.config_subentry_id
         assert hass.states.get(f"sensor.{object_id}").state == "P 1 BR woning Echt"
+
+
+async def test_renames_legacy_hub_title(hass, aioclient_mock):
+    """An entry from before the rename gets the new title and keeps its sensors."""
+    e = hub(sensor(LEGACY_HUB_TITLE))
+    e.add_to_hass(hass)
+    hass.config_entries.async_update_entry(e, title=LEGACY_HUB_TITLE)
+    await setup(hass, aioclient_mock, e)
+    assert e.title == HUB_TITLE and e.state is ConfigEntryState.LOADED
+    assert hass.states.get("sensor.p2000_monitor").state == "P 1 BR woning Echt"
 
 
 async def test_service_registered(hass, aioclient_mock):

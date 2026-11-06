@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "P2000 Monitor toevoegen",
-        "description": "Stel de eerste sensor in. Daarna voeg je via 'Sensor toevoegen' zoveel sensoren toe als je wilt, elk met eigen regio's, diensten en filters.",
+        "title": "PieperMonitor toevoegen",
+        "description": "Stel de eerste sensor in. Daarna voeg je via 'Sensor toevoegen' zoveel sensoren toe als je wilt, elk met eigen regio's, diensten en filters.\n\nMeer over PieperMonitor en de app die eraan komt: [piepermonitor.nl]({website_url})",
         "data": {
           "name": "Sensornaam",
           "all_services": "Toon alle meldingen",
@@ -32,7 +32,7 @@
       }
     },
     "abort": {
-      "already_configured": "P2000 Monitor is al toegevoegd. Gebruik 'Sensor toevoegen' voor een extra sensor."
+      "already_configured": "PieperMonitor is al toegevoegd. Gebruik 'Sensor toevoegen' voor een extra sensor."
     }
   },
   "config_subentries": {
@@ -164,7 +164,8 @@
   "options": {
     "step": {
       "init": {
-        "title": "P2000 Monitor-opties",
+        "title": "PieperMonitor-opties",
+        "description": "Meer over PieperMonitor en de app die eraan komt: [piepermonitor.nl]({website_url})",
         "data": {
           "brandbase": "Voertuignamen ophalen van Brandbase",
           "scan_interval": "Poll-interval (seconden)"

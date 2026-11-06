@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add P2000 Monitor",
-        "description": "Set up the first sensor. Afterwards use 'Add sensor' to add as many sensors as you like, each with its own regions, services and filters.",
+        "title": "Add PieperMonitor",
+        "description": "Set up the first sensor. Afterwards use 'Add sensor' to add as many sensors as you like, each with its own regions, services and filters.\n\nMore about PieperMonitor and the upcoming app: [piepermonitor.nl]({website_url})",
         "data": {
           "name": "Sensor name",
           "all_services": "Show all alerts",
@@ -32,7 +32,7 @@
       }
     },
     "abort": {
-      "already_configured": "P2000 Monitor is already added. Use 'Add sensor' for another sensor."
+      "already_configured": "PieperMonitor is already added. Use 'Add sensor' for another sensor."
     }
   },
   "config_subentries": {
@@ -164,7 +164,8 @@
   "options": {
     "step": {
       "init": {
-        "title": "P2000 Monitor options",
+        "title": "PieperMonitor options",
+        "description": "More about PieperMonitor and the upcoming app: [piepermonitor.nl]({website_url})",
         "data": {
           "brandbase": "Look up vehicle names on Brandbase",
           "scan_interval": "Poll interval (seconds)"

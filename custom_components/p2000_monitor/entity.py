@@ -48,7 +48,7 @@ class P2000WatchEntity(Entity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
-            manufacturer="P2000 Monitor",
+            manufacturer="PieperMonitor",
             model="Capcode/voertuig",
             entry_type=DeviceEntryType.SERVICE,
         )

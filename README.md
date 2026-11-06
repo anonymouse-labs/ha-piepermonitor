@@ -1,10 +1,12 @@
-<p align="center"><img src="logo.png" alt="P2000 Monitor" width="330"></p>
+<p align="center"><img src="logo.png" alt="PieperMonitor" width="330"></p>
 
-# P2000 Monitor for Home Assistant
+# PieperMonitor for Home Assistant
+
+**Website:** [piepermonitor.nl](https://www.piepermonitor.nl) · **App:** coming soon, follow the website for news.
 
 Live Dutch P2000 emergency alerts in Home Assistant, from the structured **AlarmeringDroid API**. Like [P2Kflex](https://live.p2kflex.nl/), you decide what you follow — entirely from the UI: your own sensors per region or service, alarms for your own capcodes or vehicles, and a live dashboard card.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=anonymouse-labs&repository=ha-p2000-monitor&category=integration) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/anonymouse0501)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=anonymouse-labs&repository=ha-piepermonitor&category=integration) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/anonymouse0501)
 
 ## Features
 
@@ -14,20 +16,32 @@ Live Dutch P2000 emergency alerts in Home Assistant, from the structured **Alarm
 - **Map** — alerts with a location from the last hour appear on the standard map card.
 - **Vehicles named** — call signs in fire brigade pager texts (24-0733) are shown with type and post from [Brandbase](https://brandbase.hetbrandweerforum.nl/) (can be switched off).
 - **Pager text or alert text** — choose per sensor: `P 1 BR woning Rijksweg Echt` or `Brandweer met spoed naar Rijksweg, Echt`.
-- **One poll for everything** — the national feed is fetched once every 30 seconds (adjustable from 30 to 300 under **P2000 Monitor → Configure**), however many sensors you have. A longer interval misses nothing: the feed holds the latest ~30 national alerts and every alert is deduplicated.
+- **One poll for everything** — the national feed is fetched once every 30 seconds (adjustable from 30 to 300 under **PieperMonitor → Configure**), however many sensors you have. A longer interval misses nothing: the feed holds the latest ~30 national alerts and every alert is deduplicated.
 - **No missed or duplicate alerts** — every alert is deduplicated on its AlarmeringDroid id and fires exactly one event; each sensor keeps its last 100 alerts across restarts.
+
+## PieperMonitor website and app
+
+[piepermonitor.nl](https://www.piepermonitor.nl) is the home of PieperMonitor. A PieperMonitor app for your phone will follow; you will find it there once it is available.
 
 ## Installation
 
-1. In **HACS**, open the menu (⋮) → **Custom repositories**, add `https://github.com/anonymouse-labs/ha-p2000-monitor` as type **Integration**.
-2. Install **P2000 Monitor** and restart Home Assistant.
-3. Go to **Settings → Devices & services → Add integration → P2000 Monitor** and set up your first sensor.
+1. In **HACS**, open the menu (⋮) → **Custom repositories**, add `https://github.com/anonymouse-labs/ha-piepermonitor` as type **Integration**.
+2. Install **PieperMonitor** and restart Home Assistant.
+3. Go to **Settings → Devices & services → Add integration → PieperMonitor** and set up your first sensor.
 
 Requires Home Assistant 2025.6 or newer.
 
+## Renamed from P2000 Monitor
+
+Since 0.10 this integration is called **PieperMonitor**, and the repository moved to `anonymouse-labs/ha-piepermonitor`. Only the name and logo changed. If you already use it, there is nothing to do: update through HACS as usual.
+
+- The integration domain stays `p2000_monitor`, so entity ids, history, automations, events (`p2000_monitor_*`), the blueprint and the dashboard card (`custom:p2000-live-card`) keep working.
+- The old repository URL redirects to the new one, so HACS keeps finding updates.
+- An existing integration entry with the old title is renamed to *PieperMonitor* on the first start. Your sensors keep their names.
+
 ## Adding sensors
 
-Open **Settings → Devices & services → P2000 Monitor** and click **Add sensor**. Every sensor becomes its own entity (`sensor.<name>`). Use the ⋮ menu next to a sensor to change or delete it.
+Open **Settings → Devices & services → PieperMonitor** and click **Add sensor**. Every sensor becomes its own entity (`sensor.<name>`). Use the ⋮ menu next to a sensor to change or delete it.
 
 | Filter | Meaning |
 |---|---|
@@ -61,17 +75,17 @@ Click **Follow capcode or vehicle**, give it a name and enter capcodes and/or ca
 - **Alarm** (`event.<name>_alarm`) — fires once per alert. In the automation editor pick *Entity → State* on it; the event data contains `message`, `pager_text`, `priority`, `vehicles`, `vehicle_types`, `city`, `latitude`/`longitude` and more.
 - **Active** (`binary_sensor.<name>_active`) — on for a set number of minutes after the last alarm; handy for a dashboard or a light.
 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fanonymouse-labs%2Fha-p2000-monitor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fp2000_monitor%2Fp2000_alarm_notify.yaml)
-The **P2000 alarm melden** blueprint sends a push notification to your phone for a followed unit.
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fanonymouse-labs%2Fha-piepermonitor%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fp2000_monitor%2Fp2000_alarm_notify.yaml)
+The **PieperMonitor alarm melden** blueprint sends a push notification to your phone for a followed unit.
 
 ## Live dashboard
 
-The live card is loaded automatically. Add it via **Edit dashboard → Add card → P2000 live** and pick one or more P2000 sensors, or in YAML:
+The live card is loaded automatically. Add it via **Edit dashboard → Add card → PieperMonitor live** and pick one or more P2000 sensors, or in YAML:
 
 ```yaml
 type: custom:p2000-live-card
 entities:
-  - sensor.p2000_monitor
+  - sensor.piepermonitor
 display: both   # text, pager or both
 max_items: 40
 ```
@@ -80,11 +94,11 @@ Click an alert to see the pager text, the alerted vehicles (with Brandbase names
 
 ## Vehicle names (Brandbase)
 
-Fire brigade pager texts end with the call signs of the alerted units (`243231` → `24-3231`). P2000 Monitor looks these up on [Brandbase](https://brandbase.hetbrandweerforum.nl/) to show the vehicle type and post. To keep the load on this volunteer-run site minimal it only fetches regions that appear in alerts your sensors accept, each at most once a week, one page at a time with 15 seconds in between, and caches the result. Switch it off under **P2000 Monitor → Configure**. Corrections to vehicle data go to the Brandbase editors.
+Fire brigade pager texts end with the call signs of the alerted units (`243231` → `24-3231`). PieperMonitor looks these up on [Brandbase](https://brandbase.hetbrandweerforum.nl/) to show the vehicle type and post. To keep the load on this volunteer-run site minimal it only fetches regions that appear in alerts your sensors accept, each at most once a week, one page at a time with 15 seconds in between, and caches the result. Switch it off under **PieperMonitor → Configure**. Corrections to vehicle data go to the Brandbase editors.
 
 ## Integration options
 
-Under **Settings → Devices & services → P2000 Monitor → Configure**:
+Under **Settings → Devices & services → PieperMonitor → Configure**:
 
 | Option | Default | Meaning |
 |---|---|---|
@@ -93,7 +107,7 @@ Under **Settings → Devices & services → P2000 Monitor → Configure**:
 
 ## Upgrading from 0.7 or older
 
-Before 0.8, every sensor was a separate integration entry. On the first start of 0.8 these are merged automatically into one **P2000 Monitor** entry with one sensor per old entry. Entity IDs, history and stored alerts are kept, so dashboards and automations keep working.
+Before 0.8, every sensor was a separate integration entry. On the first start of 0.8 these are merged automatically into one **PieperMonitor** entry with one sensor per old entry. Entity IDs, history and stored alerts are kept, so dashboards and automations keep working.
 
 ## Services
 

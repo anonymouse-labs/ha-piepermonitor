@@ -1,4 +1,4 @@
-"""AlarmeringDroid API coordinator for P2000 Monitor."""
+"""AlarmeringDroid API coordinator for PieperMonitor."""
 from __future__ import annotations
 
 import asyncio
@@ -376,7 +376,7 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return await self._fetch_api(API_URL + quote(payload, safe=""))
 
     async def _fetch_api(self, url: str = API_URL) -> list[dict[str, Any]]:
-        headers = {"User-Agent": "P2000-Monitor Home Assistant", "Accept": "application/json, text/plain, */*"}
+        headers = {"User-Agent": "PieperMonitor Home Assistant", "Accept": "application/json, text/plain, */*"}
         session = async_get_clientsession(self.hass)
         async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=API_TIMEOUT)) as response:
             response.raise_for_status()

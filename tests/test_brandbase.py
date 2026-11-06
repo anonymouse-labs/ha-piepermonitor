@@ -49,7 +49,7 @@ async def test_lookup_is_lazy_cached_and_polite(hass: HomeAssistant, aioclient_m
         await hass.async_block_till_done(wait_background_tasks=True)
     assert aioclient_mock.call_count == 2  # index + one region page
     assert all(s >= 10 for s in sleeps)  # robots.txt crawl delay
-    assert all(h.get("User-Agent", "").startswith("P2000-Monitor") for *_, h in aioclient_mock.mock_calls)
+    assert all(h.get("User-Agent", "").startswith("PieperMonitor") for *_, h in aioclient_mock.mock_calls)
     db.enrich(message)
     assert message["vehicles"][0]["type"] == "Tankautospuit"
     # Within a week nothing is fetched again; ambulance alerts are never looked up.

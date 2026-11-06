@@ -1,4 +1,4 @@
-"""Shared fixtures for P2000 Monitor tests."""
+"""Shared fixtures for PieperMonitor tests."""
 import sys
 
 import pytest

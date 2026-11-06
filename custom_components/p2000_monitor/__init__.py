@@ -1,6 +1,6 @@
-"""P2000 Monitor integration.
+"""PieperMonitor integration.
 
-One config entry ("P2000 Monitor") holds any number of sensor subentries, each
+One config entry ("PieperMonitor") holds any number of sensor subentries, each
 with its own region/service/priority/capcode/text filters. All sensors share a
 single poll of the AlarmeringDroid feed.
 """
@@ -57,6 +57,7 @@ from .const import (
     DOMAIN,
     EVENT_NEW_MESSAGE,
     HUB_TITLE,
+    LEGACY_HUB_TITLE,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     SERVICE_INJECT_TEST_INCIDENT,
@@ -200,11 +201,15 @@ def subentry_storage_id(subentry: ConfigSubentry) -> str:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: P2000ConfigEntry) -> bool:
-    """Set up P2000 Monitor and one filter processor per sensor subentry."""
+    """Set up PieperMonitor and one filter processor per sensor subentry."""
     if entry.version < 2:
-        # Merged into the P2000 Monitor entry by async_migrate_entry; drop it.
+        # Merged into the PieperMonitor entry by async_migrate_entry; drop it.
         hass.async_create_task(hass.config_entries.async_remove(entry.entry_id))
         return True
+    if entry.title == LEGACY_HUB_TITLE:
+        # Renamed to PieperMonitor in 0.10. Only the title changes: domain,
+        # entity ids, events and stored history stay the same.
+        hass.config_entries.async_update_entry(entry, title=HUB_TITLE)
 
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     feed = await _async_get_feed(hass, max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, scan_interval)))
@@ -266,7 +271,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: P2000ConfigEntry) -
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: P2000ConfigEntry) -> bool:
-    """Unload P2000 Monitor."""
+    """Unload PieperMonitor."""
     if entry.version < 2:
         return True
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
@@ -295,7 +300,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Merge the old one-sensor-per-entry setup into a single entry with subentries.
 
     Version 1 entries each held one sensor. The first one to migrate becomes the
-    P2000 Monitor entry; every version 1 entry (itself included) becomes a sensor
+    PieperMonitor entry; every version 1 entry (itself included) becomes a sensor
     subentry of it, keeping its entity (same unique_id, so the same entity_id
     and history) and its stored message history. The other entries are removed
     on setup.

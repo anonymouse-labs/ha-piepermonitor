@@ -1,4 +1,4 @@
-"""Config flow for P2000 Monitor.
+"""Config flow for PieperMonitor.
 
 The integration is added once. Each sensor is a subentry ("Sensor toevoegen")
 with its own filters, and can be changed later through "Wijzigen".
@@ -43,6 +43,7 @@ from .const import (
     DISPLAY_TEXT,
     DOMAIN,
     HUB_TITLE,
+    WEBSITE_URL,
     SUBENTRY_SENSOR,
     SUBENTRY_WATCH,
 )
@@ -128,7 +129,7 @@ def _normalise(data: dict[str, Any]) -> dict[str, Any]:
 
 
 class P2000ConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Add P2000 Monitor together with its first sensor."""
+    """Add PieperMonitor together with its first sensor."""
 
     VERSION = 2
 
@@ -145,7 +146,9 @@ class P2000ConfigFlow(ConfigFlow, domain=DOMAIN):
                 ],
             )
         return self.async_show_form(
-            step_id="user", data_schema=_schema({"name": HUB_TITLE, CONF_ALL_SERVICES: True})
+            step_id="user",
+            data_schema=_schema({"name": HUB_TITLE, CONF_ALL_SERVICES: True}),
+            description_placeholders={"website_url": WEBSITE_URL},
         )
 
     @classmethod
@@ -183,6 +186,7 @@ class P2000OptionsFlow(OptionsFlow):
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                 ),
             }),
+            description_placeholders={"website_url": WEBSITE_URL},
         )
 
 
