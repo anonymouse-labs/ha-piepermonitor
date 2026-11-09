@@ -14,6 +14,7 @@ from custom_components.p2000_monitor.enrich import (
 def test_priority():
     assert parse_priority("P 1 BR woning Echt 243231") == ("P1", 1)
     assert parse_priority("PRIO 2 Ass. politie") == ("P2", 2)
+    assert parse_priority("A0 Stationsstraat Elsloo LI 103192") == ("A0", 1)
     assert parse_priority("A1 AMBU 17103 Peperdonk") == ("A1", 1)
     assert parse_priority("A2 (dia: ja) 10118 Rit 155028") == ("A2", 2)
     assert parse_priority("B2 AMBU 17216 Dr. Molewaterplein") == ("B2", 3)
@@ -71,6 +72,13 @@ def test_misfiled_ambulance_becomes_ambulance():
     assert message["dienstid"] == "3" and message["discipline"] == "Ambulancediensten"
     assert message["message"] == "A1 Prinses Christinastraat Echt 99369"
     assert message["vehicles"] == []  # 99369 is a ride number, not a unit
+    # A0 (8 Nov, Elsloo) was filed as fire and its ride number read as unit 10-3192.
+    a0 = normalize_api_message({
+        "id": "3", "melding": "A0 Stationsstraat Elsloo LI 103192", "tekstmelding": "Brandweer",
+        "dienstid": "2", "regioid": "22", "datum": "08-11", "tijd": "20:11", "capcodes": [],
+    })
+    assert a0["dienstid"] == "3" and a0["vehicles"] == []
+    assert (a0["priority"], a0["urgency"]) == ("A0", 1)
     for pager in ("P 1 BR woning Echt 243231", "BR container Echt", "BDH-01 Liftopsluiting"):
         fire = normalize_api_message({"id": "2", "melding": pager, "tekstmelding": "Brandweer", "dienstid": "2",
                                       "regioid": "21", "datum": "28-10", "tijd": "20:12", "capcodes": []})

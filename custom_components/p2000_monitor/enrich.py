@@ -14,7 +14,7 @@ _AMBULANCE_UNIT = re.compile(r"(?<![\d-])(0[1-9]|1\d|2[0-8])(\d{3})(?![\d-])")
 _NOT_A_UNIT = re.compile(r"\b(?:rit|bon|ritnummer)\s*:?\s*\d+", re.IGNORECASE)
 
 _P_PRIORITY = re.compile(r"\b(?:P|PRIO)\s*([1-5])\b", re.IGNORECASE)
-_AMBULANCE_PRIORITY = re.compile(r"^\s*(A\s*[12]|B\s*[12]?)\b", re.IGNORECASE)
+_AMBULANCE_PRIORITY = re.compile(r"^\s*(A\s*[012]|B\s*[12]?)\b", re.IGNORECASE)
 
 SERVICE_POLICE = "1"
 SERVICE_FIRE = "2"
@@ -31,8 +31,8 @@ POLICE_CAPCODES = {
 _POLICE_DESCRIPTION = re.compile(r"\b(politie|persinfo|persalarm)\b", re.IGNORECASE)
 
 
-# Only ambulances start a pager text with A1/A2/B1/B2 (a bare "B" is too vague).
-_AMBULANCE_PAGER = re.compile(r"^\s*[AB]\s*[12]\b", re.IGNORECASE)
+# Only ambulances start a pager text with A0/A1/A2/B1/B2 (a bare "B" is too vague).
+_AMBULANCE_PAGER = re.compile(r"^\s*(A\s*[012]|B\s*[12])\b", re.IGNORECASE)
 
 # UTF-8 read as Windows-1252: "Ã¶" for "ö", "â€™" for "’".
 _MOJIBAKE = re.compile("[ÃÂ]|â€")
@@ -79,13 +79,13 @@ def is_police_alert(capcodes: list[str], details: list[dict[str, str]]) -> bool:
 def parse_priority(pager_text: str, prio1: Any = None) -> tuple[str | None, int | None]:
     """Return (label, urgency) where urgency 1 is the most urgent.
 
-    Fire and police use P1-P5; ambulances use A1 (urgency 1), A2 (2) and B (3).
+    Fire and police use P1-P5; ambulances use A0/A1 (urgency 1), A2 (2) and B (3).
     The API's prio1 flag fills in when the text has no priority.
     """
     text = str(pager_text or "")
     if match := _AMBULANCE_PRIORITY.match(text):
         label = match.group(1).upper().replace(" ", "")
-        return label, {"A1": 1, "A2": 2}.get(label, 3)
+        return label, {"A0": 1, "A1": 1, "A2": 2}.get(label, 3)
     if match := _P_PRIORITY.search(text):
         return f"P{match.group(1)}", int(match.group(1))
     if str(prio1) == "1":
