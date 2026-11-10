@@ -9,7 +9,7 @@
  *
  * Shows the alerts of the chosen P2000 sensors as a live list: service colour,
  * priority, GRIP, region/place, distance, and on click the pager text, the
- * alerted vehicles (with Brandbase names) and capcodes.
+ * alerted vehicles (with their names) and capcodes.
  */
 const SERVICES = {
   Brandweerdiensten: { label: "Brandweer", color: "#E53935", icon: "mdi:fire-truck" },

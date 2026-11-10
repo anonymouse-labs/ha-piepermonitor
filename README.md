@@ -4,7 +4,7 @@
 
 **Website:** [piepermonitor.nl](https://www.piepermonitor.nl) · **App:** coming soon, follow the website for news.
 
-Live Dutch P2000 emergency alerts in Home Assistant, from the structured **AlarmeringDroid API**. Like [P2Kflex](https://live.p2kflex.nl/), you decide what you follow — entirely from the UI: your own sensors per region or service, alarms for your own capcodes or vehicles, and a live dashboard card.
+This is the official Home Assistant integration of **[PieperMonitor](https://www.piepermonitor.nl)**. It brings live Dutch P2000 emergency alerts into Home Assistant, built to work together with the PieperMonitor website and the upcoming app. You decide what you follow, entirely from the UI: your own sensors per region or service, alarms for your own capcodes or vehicles, and a live dashboard card.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=anonymouse-labs&repository=ha-piepermonitor&category=integration) [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/anonymouse0501)
 
@@ -12,16 +12,16 @@ Live Dutch P2000 emergency alerts in Home Assistant, from the structured **Alarm
 
 - **Your own sensors** — add the integration once, then use **Add sensor** for every view you want: all of the Netherlands, your safety region, the fire brigade within 20 km of home, or one station by capcode.
 - **Follow capcodes or vehicles** — **Follow capcode or vehicle** creates an *Alarm* event and an *Active* sensor for automations, no YAML needed. A blueprint sends a push notification.
-- **Live card** — a P2Kflex-style list (`custom:p2000-live-card`) with service colours, priority, GRIP, vehicles and capcodes, switchable between alert text and pager text. Loaded automatically.
+- **Live card** — a live alert list (`custom:p2000-live-card`) with service colours, priority, GRIP, vehicles and capcodes, switchable between alert text and pager text. Loaded automatically.
 - **Map** — alerts with a location from the last hour appear on the standard map card.
-- **Vehicles named** — call signs in fire brigade pager texts (24-0733) are shown with type and post from [Brandbase](https://brandbase.hetbrandweerforum.nl/) (can be switched off).
+- **Vehicles named** — call signs in fire brigade pager texts (24-0733) are shown with type and post, looked up from a public vehicle database (can be switched off).
 - **Pager text or alert text** — choose per sensor: `P 1 BR woning Rijksweg Echt` or `Brandweer met spoed naar Rijksweg, Echt`.
 - **One poll for everything** — the national feed is fetched once every 30 seconds (adjustable from 30 to 300 under **PieperMonitor → Configure**), however many sensors you have. A longer interval misses nothing: the feed holds the latest ~30 national alerts and every alert is deduplicated.
-- **No missed or duplicate alerts** — every alert is deduplicated on its AlarmeringDroid id and fires exactly one event; each sensor keeps its last 100 alerts across restarts.
+- **No missed or duplicate alerts** — every alert is deduplicated on its unique id and fires exactly one event; each sensor keeps its last 100 alerts across restarts.
 
 ## PieperMonitor website and app
 
-[piepermonitor.nl](https://www.piepermonitor.nl) is the home of PieperMonitor. A PieperMonitor app for your phone will follow; you will find it there once it is available.
+[piepermonitor.nl](https://www.piepermonitor.nl) is the home of PieperMonitor, and this integration is part of it. The website, this Home Assistant integration and the upcoming phone app belong together and share the same name, look and approach. News, documentation and the app will be published on the website.
 
 ## Installation
 
@@ -90,11 +90,11 @@ display: both   # text, pager or both
 max_items: 40
 ```
 
-Click an alert to see the pager text, the alerted vehicles (with Brandbase names) and the capcodes. The service chips show today's count and hide or show that service. For the map, add a **Map** card with `geo_location_sources: [p2000_monitor]`. A complete example dashboard is in [`dashboards/p2000_live.yaml`](dashboards/p2000_live.yaml).
+Click an alert to see the pager text, the alerted vehicles (with their names) and the capcodes. The service chips show today's count and hide or show that service. For the map, add a **Map** card with `geo_location_sources: [p2000_monitor]`. A complete example dashboard is in [`dashboards/p2000_live.yaml`](dashboards/p2000_live.yaml).
 
-## Vehicle names (Brandbase)
+## Vehicle names
 
-Fire brigade pager texts end with the call signs of the alerted units (`243231` → `24-3231`). PieperMonitor looks these up on [Brandbase](https://brandbase.hetbrandweerforum.nl/) to show the vehicle type and post. To keep the load on this volunteer-run site minimal it only fetches regions that appear in alerts your sensors accept, each at most once a week, one page at a time with 15 seconds in between, and caches the result. Switch it off under **PieperMonitor → Configure**. Corrections to vehicle data go to the Brandbase editors.
+Fire brigade pager texts end with the call signs of the alerted units (`243231` → `24-3231`). PieperMonitor looks these up in a public, volunteer-run vehicle database to show the vehicle type and post. To keep the load on that service minimal it only fetches regions that appear in alerts your sensors accept, each at most once a week, one page at a time with 15 seconds in between, and caches the result. Switch it off under **PieperMonitor → Configure**.
 
 ## Integration options
 
@@ -102,8 +102,8 @@ Under **Settings → Devices & services → PieperMonitor → Configure**:
 
 | Option | Default | Meaning |
 |---|---|---|
-| **Poll interval** | 30 s | How often the national feed is fetched, for all sensors together (30–300 s). The AlarmeringDroid API is a free third-party service; please keep this modest. |
-| **Look up vehicle names on Brandbase** | on | See [Vehicle names](#vehicle-names-brandbase) above. |
+| **Poll interval** | 30 s | How often the national feed is fetched, for all sensors together (30–300 s). The feed is a free service; please keep this modest. |
+| **Look up vehicle names** | on | See [Vehicle names](#vehicle-names) above. |
 
 ## Upgrading from 0.7 or older
 
@@ -128,7 +128,7 @@ Useful debug messages are written under the `p2000_monitor` logger.
 
 ## Events
 
-The feed is polled once for all sensors. Each message is deduplicated on its AlarmeringDroid id.
+The feed is polled once for all sensors. Each message is deduplicated on its unique id.
 
 | Event | Fired | Data |
 |---|---|---|
@@ -146,7 +146,7 @@ YAML configuration (`sensor: - platform: p2000_monitor`) is no longer supported.
 
 ## Data source
 
-Alerts come from the AlarmeringDroid API. Its feed only holds the latest ~30 national alerts, which is why every sensor keeps its own history.
+Alerts come from the structured PieperMonitor data feed for public P2000 alerts. The feed only holds the latest ~30 national alerts, which is why every sensor keeps its own history.
 
 ## License
 
