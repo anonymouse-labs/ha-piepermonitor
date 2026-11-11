@@ -10,6 +10,7 @@ import json
 import logging
 import re
 from typing import Any
+import uuid
 from urllib.parse import quote
 
 import aiohttp
@@ -34,6 +35,8 @@ from .enrich import (
     to_float,
 )
 
+from .feed import adapt_feed
+from .regions import POLICE_UNITS, REGIONS, SERVICES, police_unit_regions
 from .const import (
     DEFAULT_INCIDENT_WINDOW,
     DEFAULT_SCAN_INTERVAL,
@@ -42,11 +45,16 @@ from .const import (
     EVENT_INCIDENT_UPDATE,
     EVENT_NEW_INCIDENT,
     EVENT_NEW_MESSAGE,
+    FEED_INSTALL_KEY,
+    FEED_REGISTER_URL,
+    FEED_URL,
     MAX_BACKOFF,
     MAX_EVENT_AGE,
     MAX_HISTORY,
     MAX_INCIDENT_HISTORY,
     MAX_SEEN_MESSAGES,
+    SOURCE_FEED,
+    SOURCE_LEGACY,
     STORAGE_KEY,
     STORAGE_VERSION,
 )
@@ -60,19 +68,6 @@ LOCAL_TZ = dt_util.get_time_zone("Europe/Amsterdam")
 def storage_key(storage_id: str) -> str:
     """Per-sensor storage key so sensors never overwrite each other's history."""
     return f"{STORAGE_KEY}.{storage_id}"
-
-
-REGIONS = {
-    "1": "Amsterdam-Amstelland", "2": "Groningen", "3": "Noord- en Oost-Gelderland",
-    "4": "Zaanstreek-Waterland", "5": "Hollands Midden", "6": "Brabant-Noord",
-    "7": "Friesland", "8": "Gelderland-Midden", "9": "Kennemerland",
-    "10": "Rotterdam-Rijnmond", "11": "Brabant-Zuidoost", "12": "Drenthe",
-    "13": "Gelderland-Zuid", "14": "Zuid-Holland-Zuid", "15": "Limburg-Noord",
-    "17": "IJsselland", "18": "Utrecht", "19": "Gooi en Vechtstreek", "20": "Zeeland",
-    "21": "Zuid-Limburg", "23": "Twente", "24": "Noord-Holland-Noord", "25": "Haaglanden",
-    "26": "Midden- en West-Brabant", "27": "Flevoland",
-}
-SERVICES = {"1": "Politiediensten", "2": "Brandweerdiensten", "3": "Ambulancediensten", "4": "KNRM", "5": "Lifeliner", "7": "DARES"}
 
 
 def extract_priority(text: str) -> str | None:
@@ -140,31 +135,6 @@ def _message_capcodes(message: dict[str, Any]) -> set[str]:
         codes.add(normalize_capcode(message["capcode"]))
     codes.discard("")
     return codes
-
-
-# Police alerts carry a police unit ("Eenheid Limburg") instead of a
-# veiligheidsregio, under the id of one of its regions (Limburg = 21). Map each
-# unit to all veiligheidsregio's it covers, so region filters work for police.
-POLICE_UNITS = {
-    "noord-nederland": ["2", "7", "12"],
-    "oost-nederland": ["3", "8", "13", "17", "23"],
-    "midden-nederland": ["18", "19", "27"],
-    "noord-holland": ["4", "9", "24"],
-    "amsterdam": ["1"],
-    "den haag": ["5", "25"],
-    "rotterdam": ["10", "14"],
-    "zeeland-west-brabant": ["20", "26"],
-    "oost-brabant": ["6", "11"],
-    "limburg": ["15", "21"],
-}
-
-
-def police_unit_regions(region_text: str) -> list[str] | None:
-    """Veiligheidsregio ids covered by a police unit name, or None if not a unit."""
-    text = region_text.strip().lower()
-    if not text.startswith("eenheid"):
-        return None
-    return POLICE_UNITS.get(text.removeprefix("eenheid").strip())
 
 
 def message_regions(message: dict[str, Any]) -> set[str]:
@@ -336,7 +306,15 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     so adding sensors never adds API requests.
     """
 
-    def __init__(self, hass: HomeAssistant, scan_interval: int = DEFAULT_SCAN_INTERVAL) -> None:
+    def __init__(
+        self, hass: HomeAssistant, scan_interval: int = DEFAULT_SCAN_INTERVAL, source: str = SOURCE_LEGACY
+    ) -> None:
+        self.source = source
+        # The feed answers 304 while nothing changed; reuse the last messages then.
+        self._feed_etag: str | None = None
+        self._feed_messages: list[dict[str, Any]] = []
+        self._feed_auth: dict[str, str] | None = None
+        self.feed_live: bool | None = None
         # Base interval; backoff during outages starts from it and resets to it.
         self.scan_interval = timedelta(seconds=scan_interval)
         self._seen_ids: set[str] = set()
@@ -374,6 +352,46 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         payload = json.dumps({k: [str(x) for x in v] for k, v in query.items() if v}, separators=(",", ":"))
         return await self._fetch_api(API_URL + quote(payload, safe=""))
+
+    async def _feed_headers(self, *, renew: bool = False) -> dict[str, str]:
+        """Headers with this installation's id and token; registers once per start (the token is stable)."""
+        if self._feed_auth is None or renew:
+            store = Store(self.hass, 1, FEED_INSTALL_KEY)
+            install = ((await store.async_load()) or {}).get("id")
+            if not install:
+                install = uuid.uuid4().hex
+                await store.async_save({"id": install})
+            session = async_get_clientsession(self.hass)
+            async with session.post(
+                FEED_REGISTER_URL, json={"install": install}, timeout=aiohttp.ClientTimeout(total=API_TIMEOUT)
+            ) as response:
+                response.raise_for_status()
+                token = (await response.json()).get("token")
+            if not token:
+                raise ValueError("PieperMonitor feed gave no token")
+            self._feed_auth = {"X-PM-Install": install, "X-PM-Token": token}
+        return {"User-Agent": "PieperMonitor Home Assistant", "Accept": "application/json", **self._feed_auth}
+
+    async def _fetch_feed(self, *, retry: bool = True) -> list[dict[str, Any]]:
+        """Alerts from the PieperMonitor feed, already enriched; only adapted to the sensor shape."""
+        headers = await self._feed_headers()
+        if self._feed_etag:
+            headers["If-None-Match"] = self._feed_etag
+        session = async_get_clientsession(self.hass)
+        async with session.get(FEED_URL, headers=headers, timeout=aiohttp.ClientTimeout(total=API_TIMEOUT)) as response:
+            if response.status == 401 and retry:
+                self._feed_auth = None  # token rejected: register again once
+                return await self._fetch_feed(retry=False)
+            if response.status == 304:
+                return self._feed_messages
+            response.raise_for_status()
+            payload = json.loads(await response.read())
+            etag = response.headers.get("ETag")
+        messages, self.feed_live = adapt_feed(payload)
+        for message in messages:
+            self._add_distance(message)
+        self._feed_etag, self._feed_messages = etag, messages
+        return messages
 
     async def _fetch_api(self, url: str = API_URL) -> list[dict[str, Any]]:
         headers = {"User-Agent": "PieperMonitor Home Assistant", "Accept": "application/json, text/plain, */*"}
@@ -419,12 +437,12 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            messages = await self._fetch_api()
+            messages = await (self._fetch_feed() if self.source == SOURCE_FEED else self._fetch_api())
         except (aiohttp.ClientError, TimeoutError, ValueError) as err:
-            # Back off while the API is down; the coordinator itself logs the
+            # Back off while the source is down; the coordinator itself logs the
             # failure once and the recovery once, so no traceback per poll.
             self.update_interval = max(min(self.update_interval * 2, MAX_BACKOFF), self.scan_interval)
-            raise UpdateFailed(f"AlarmeringDroid API update mislukt: {err!r}") from err
+            raise UpdateFailed(f"{self.source} update mislukt: {err!r}") from err
         self.update_interval = self.scan_interval
         self.last_success_time = dt_util.utcnow()
         messages.sort(key=message_sort_key, reverse=True)

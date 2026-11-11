@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-08T19:12:00+00:00",
+  "live": true,
+  "incidents": [
+    {
+      "id": 305001,
+      "receivedAt": "2026-11-08T19:11:20+00:00",
+      "message": "A0 Stationsstraat Elsloo LI 103192",
+      "services": ["AMBULANCE"],
+      "regions": ["Zuid-Limburg"],
+      "capcodes": ["1023193"],
+      "capcodeInfo": {"1023193": "Ambulance Westelijke Mijnstreek"},
+      "priority": "A0",
+      "urgency": 1,
+      "grip": 0,
+      "vehicleIds": [],
+      "vehicles": [],
+      "city": "Elsloo",
+      "lat": 50.9477,
+      "lon": 5.7627,
+      "incidentId": 305001,
+      "escalation": null
+    },
+    {
+      "id": 305002,
+      "receivedAt": "2026-11-08T19:12:00+00:00",
+      "message": "P 1 BR woning Teststraat Maastricht 243231",
+      "services": ["BRANDWEER"],
+      "regions": ["Zuid-Limburg"],
+      "capcodes": ["1005258", "1005264"],
+      "capcodeInfo": {"1005258": "Maastricht · Tankautospuit"},
+      "priority": "P1",
+      "urgency": 1,
+      "grip": 0,
+      "vehicleIds": ["24-3231"],
+      "vehicles": [{"id": "24-3231", "type": "Tankautospuit", "station": "Maastricht"}],
+      "city": "Maastricht",
+      "lat": null,
+      "lon": null,
+      "incidentId": 305002,
+      "escalation": "Middel"
+    }
+  ]
+}

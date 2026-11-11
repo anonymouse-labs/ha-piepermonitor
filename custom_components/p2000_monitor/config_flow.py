@@ -25,9 +25,13 @@ from .const import (
     CONF_BRANDBASE,
     CONF_CAPCODES,
     CONF_SCAN_INTERVAL,
+    CONF_SOURCE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SOURCE,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    SOURCE_FEED,
+    SOURCE_LEGACY,
     CONF_DISCIPLINES,
     CONF_DISPLAY,
     CONF_EXCLUDE_TEXT,
@@ -171,6 +175,17 @@ class P2000OptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
+                vol.Optional(
+                    CONF_SOURCE, default=self.config_entry.options.get(CONF_SOURCE, DEFAULT_SOURCE)
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            {"value": SOURCE_FEED, "label": "PieperMonitor"},
+                            {"value": SOURCE_LEGACY, "label": "Legacy"},
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional(CONF_BRANDBASE, default=self.config_entry.options.get(CONF_BRANDBASE, True)): bool,
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
