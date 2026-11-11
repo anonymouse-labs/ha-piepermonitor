@@ -51,9 +51,9 @@ def sensor(name, **data):
 
 
 def hub(*sensors, brandbase=False):
-    # Brandbase off by default so tests never reach out; test_brandbase covers it.
+    # Brandbase off and the legacy source by default so tests never reach out; test_feed_source covers the feed.
     return MockConfigEntry(domain=DOMAIN, version=2, title="PieperMonitor", unique_id=DOMAIN,
-                           data={}, options={"brandbase": brandbase}, subentries_data=list(sensors))
+                           data={}, options={"brandbase": brandbase, "source": "legacy"}, subentries_data=list(sensors))
 
 
 def legacy_entry(name, **data):
