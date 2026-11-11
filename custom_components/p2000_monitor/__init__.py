@@ -2,7 +2,7 @@
 
 One config entry ("PieperMonitor") holds any number of sensor subentries, each
 with its own region/service/priority/capcode/text filters. All sensors share a
-single poll of the AlarmeringDroid feed.
+single poll of the alert feed.
 """
 from __future__ import annotations
 
@@ -49,11 +49,13 @@ from .const import (
     CONF_PRIORITIES,
     CONF_REGIONS,
     CONF_SCAN_INTERVAL,
+    CONF_SOURCE,
     CONF_STORAGE_ID,
     DATA_FEED,
     DATA_MIGRATION_LOCK,
     DEFAULT_INCIDENT_WINDOW,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SOURCE,
     DOMAIN,
     EVENT_NEW_MESSAGE,
     HUB_TITLE,
@@ -61,6 +63,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     SERVICE_INJECT_TEST_INCIDENT,
+    SOURCE_FEED,
     STORAGE_VERSION,
     SUBENTRY_SENSOR,
     SUBENTRY_WATCH,
@@ -139,18 +142,18 @@ async def _async_register_card(hass: HomeAssistant) -> None:
         add_extra_js_url(hass, f"{CARD_URL}?v={version}")
 
 
-async def _async_get_feed(hass: HomeAssistant, scan_interval: int) -> P2000FeedCoordinator:
+async def _async_get_feed(hass: HomeAssistant, scan_interval: int, source: str) -> P2000FeedCoordinator:
     """Return the shared feed coordinator, fetching it once."""
     feed: P2000FeedCoordinator | None = hass.data.get(DATA_FEED)
     if feed is None:
-        feed = hass.data[DATA_FEED] = P2000FeedCoordinator(hass, scan_interval)
+        feed = hass.data[DATA_FEED] = P2000FeedCoordinator(hass, scan_interval, source)
     else:
         feed.async_set_scan_interval(scan_interval)
     async with feed.setup_lock:
         if feed.data is None:
             await feed.async_refresh()
             if not feed.last_update_success:
-                raise ConfigEntryNotReady("AlarmeringDroid API is niet bereikbaar")
+                raise ConfigEntryNotReady("De P2000-bron is niet bereikbaar")
     return feed
 
 
@@ -212,9 +215,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: P2000ConfigEntry) -> boo
         hass.config_entries.async_update_entry(entry, title=HUB_TITLE)
 
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
-    feed = await _async_get_feed(hass, max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, scan_interval)))
+    source = entry.options.get(CONF_SOURCE, DEFAULT_SOURCE)
+    feed = await _async_get_feed(hass, max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, scan_interval)), source)
     vehicle_db: BrandbaseVehicles | None = None
-    if entry.options.get(CONF_BRANDBASE, True):
+    # The PieperMonitor feed already carries vehicle names.
+    if source != SOURCE_FEED and entry.options.get(CONF_BRANDBASE, True):
         vehicle_db = BrandbaseVehicles(hass)
         await vehicle_db.async_load()
         entry.async_on_unload(vehicle_db.async_stop)

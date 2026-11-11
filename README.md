@@ -102,6 +102,7 @@ Under **Settings → Devices & services → PieperMonitor → Configure**:
 
 | Option | Default | Meaning |
 |---|---|---|
+| **Alert source** | PieperMonitor | PieperMonitor gives the same data and interpretation as [piepermonitor.nl](https://www.piepermonitor.nl). *Legacy* is the previous direct source, kept for a while as a fallback. |
 | **Poll interval** | 30 s | How often the national feed is fetched, for all sensors together (30–300 s). The feed is a free service; please keep this modest. |
 | **Look up vehicle names** | on | See [Vehicle names](#vehicle-names) above. |
 

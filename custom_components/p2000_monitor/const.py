@@ -22,6 +22,18 @@ DISPLAY_PAGER = "pager"
 # Integration option: look up fire vehicle names on Brandbase (default on).
 CONF_BRANDBASE = "brandbase"
 
+# Integration option: where alerts come from. "piepermonitor" is the PieperMonitor
+# feed (same data and interpretation as piepermonitor.nl); "legacy" is the previous
+# direct source, kept as a fallback for a release or two.
+CONF_SOURCE = "source"
+SOURCE_FEED = "piepermonitor"
+SOURCE_LEGACY = "legacy"
+DEFAULT_SOURCE = SOURCE_FEED
+FEED_URL = "https://piepermonitor-feed.anonymouse-labs.workers.dev/v1/feed.json"
+FEED_REGISTER_URL = "https://piepermonitor-feed.anonymouse-labs.workers.dev/v1/register"
+# Random id of this installation (no personal data); the feed issues a token for it.
+FEED_INSTALL_KEY = "p2000_monitor.install"
+
 # The single config entry and its per-sensor subentries.
 HUB_TITLE = "PieperMonitor"
 # Title of the hub entry before the rename to PieperMonitor (0.10). Entries
