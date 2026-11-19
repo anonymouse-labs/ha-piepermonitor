@@ -31,8 +31,20 @@ SOURCE_LEGACY = "legacy"
 DEFAULT_SOURCE = SOURCE_FEED
 FEED_URL = "https://piepermonitor-feed.anonymouse-labs.workers.dev/v1/feed.json"
 FEED_REGISTER_URL = "https://piepermonitor-feed.anonymouse-labs.workers.dev/v1/register"
+FEED_LOGIN_URL = "https://piepermonitor-feed.anonymouse-labs.workers.dev/v1/login"
 # Random id of this installation (no personal data); the feed issues a token for it.
 FEED_INSTALL_KEY = "p2000_monitor.install"
+# Feed tiers: "live" needs a PieperMonitor account with Plus or Pro (log in under Options with the same account as
+# the app and website); "free" gets a view that moves on every 5 minutes, so it is polled every 5 minutes.
+TIER_FREE = "free"
+TIER_LIVE = "live"
+FREE_SCAN_INTERVAL = 300
+# Integration options of the account. Only the refresh token is kept, never the password.
+CONF_ACCOUNT_EMAIL = "account_email"
+CONF_ACCOUNT_REFRESH = "account_refresh"
+CONF_ACCOUNT_PASSWORD = "account_password"
+CONF_ACCOUNT_LOGOUT = "account_logout"
+ISSUE_ACCOUNT_REJECTED = "account_rejected"
 
 # The single config entry and its per-sensor subentries.
 HUB_TITLE = "PieperMonitor"

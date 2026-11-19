@@ -1,17 +1,17 @@
-## PieperMonitor v0.11.0
+## PieperMonitor v0.12.0
 
-### Eén bron voor alles
-- De integratie haalt meldingen nu op uit de PieperMonitor-feed, dezelfde data en dezelfde interpretatie als [piepermonitor.nl](https://www.piepermonitor.nl) en de app. Een verbetering aan de bron werkt daardoor meteen door in Home Assistant.
-- Voertuignamen, capcodenamen, prioriteit en regio komen kant en klaar uit de feed. De integratie zoekt zelf geen voertuignamen meer op als je de nieuwe bron gebruikt.
+### Gratis en live
+- Gratis: meldingen uit de PieperMonitor-bron komen elke 5 minuten binnen. Daarvoor heb je geen account nodig.
+- Live: met een PieperMonitor-abonnement **Plus** of **Pro** komen meldingen live binnen, standaard elke 30 seconden (30–300 s instelbaar).
+- Alle sensoren, volg-regels, de kaart, de dashboardkaart en de events werken in beide gevallen.
+
+### Inloggen
+- Ga naar *Instellingen* → *Apparaten en diensten* → *PieperMonitor* → **Configureren** en log in met **hetzelfde account** als in de PieperMonitor-app en op [piepermonitor.nl](https://www.piepermonitor.nl). Alleen via dat account ziet Home Assistant je abonnement.
+- Aangemeld zonder wachtwoord (via sociale login)? Stel er eerst een in via *Wachtwoord vergeten* op piepermonitor.nl, met hetzelfde e-mailadres.
+- Je wachtwoord wordt niet bewaard. Home Assistant houdt alleen een sessie voor deze installatie.
+- Het abonnement wordt twee keer per dag gecontroleerd. Stopt het, dan valt de integratie binnen 12 uur terug op gratis.
+- Wordt je account niet meer geaccepteerd, bijvoorbeeld na een nieuw wachtwoord, dan krijg je een melding onder *Reparaties* en valt de integratie terug op gratis. Log dan opnieuw in.
 
 ### Voor bestaande gebruikers
-- Bij het updaten schakelt de integratie vanzelf over naar de nieuwe bron. Terug kan onder *Configureren* → **Bron van meldingen** → *Legacy*. Die optie blijft nog een paar versies bestaan.
-- Domein, entiteiten, events, historie, automatiseringen en de dashboardkaart blijven werken.
-- Eenmalig kunnen recente meldingen dubbel in de lijst staan: één keer uit de oude en één keer uit de nieuwe bron. Dat verdwijnt vanzelf zodra er nieuwere meldingen zijn.
-- Bij ambulance en politie ontbreken huisnummers en de letters van de postcode in de tekst. Dat is bewust, zoals op de website.
-
-### Privacy
-- De integratie genereert een willekeurig installatie-id (geen persoonsgegevens) en vraagt daarmee een toegangstoken aan. Dat is nodig om de feed te beschermen tegen misbruik.
-
-### Verbeteringen
-- Ambulancemeldingen met prioriteit A0 worden nu altijd als ambulance getoond, ook in de oude bron, met prioriteit 1 en zonder nepvoertuig.
+- Zonder in te loggen werkt de integratie gratis verder, met meldingen elke 5 minuten.
+- De bron *Legacy* is verouderd en verdwijnt in een latere versie.

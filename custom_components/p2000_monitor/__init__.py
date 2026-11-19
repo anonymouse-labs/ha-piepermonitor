@@ -34,6 +34,7 @@ from .const import (
     ATTR_TEST_MESSAGE,
     ATTR_TEST_REGION,
     ATTR_TEST_REGION_NAME,
+    CONF_ACCOUNT_REFRESH,
     CONF_ALL_SERVICES,
     CONF_BRANDBASE,
     CONF_CAPCODES,
@@ -142,11 +143,13 @@ async def _async_register_card(hass: HomeAssistant) -> None:
         add_extra_js_url(hass, f"{CARD_URL}?v={version}")
 
 
-async def _async_get_feed(hass: HomeAssistant, scan_interval: int, source: str) -> P2000FeedCoordinator:
+async def _async_get_feed(
+    hass: HomeAssistant, scan_interval: int, source: str, account_refresh: str | None = None
+) -> P2000FeedCoordinator:
     """Return the shared feed coordinator, fetching it once."""
     feed: P2000FeedCoordinator | None = hass.data.get(DATA_FEED)
     if feed is None:
-        feed = hass.data[DATA_FEED] = P2000FeedCoordinator(hass, scan_interval, source)
+        feed = hass.data[DATA_FEED] = P2000FeedCoordinator(hass, scan_interval, source, account_refresh)
     else:
         feed.async_set_scan_interval(scan_interval)
     async with feed.setup_lock:
@@ -216,7 +219,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: P2000ConfigEntry) -> boo
 
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     source = entry.options.get(CONF_SOURCE, DEFAULT_SOURCE)
-    feed = await _async_get_feed(hass, max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, scan_interval)), source)
+    feed = await _async_get_feed(
+        hass,
+        max(MIN_SCAN_INTERVAL, min(MAX_SCAN_INTERVAL, scan_interval)),
+        source,
+        entry.options.get(CONF_ACCOUNT_REFRESH),
+    )
     vehicle_db: BrandbaseVehicles | None = None
     # The PieperMonitor feed already carries vehicle names.
     if source != SOURCE_FEED and entry.options.get(CONF_BRANDBASE, True):

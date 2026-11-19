@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 import aiohttp
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -46,8 +47,11 @@ from .const import (
     EVENT_NEW_INCIDENT,
     EVENT_NEW_MESSAGE,
     FEED_INSTALL_KEY,
+    FEED_LOGIN_URL,
     FEED_REGISTER_URL,
     FEED_URL,
+    FREE_SCAN_INTERVAL,
+    ISSUE_ACCOUNT_REJECTED,
     MAX_BACKOFF,
     MAX_EVENT_AGE,
     MAX_HISTORY,
@@ -57,6 +61,8 @@ from .const import (
     SOURCE_LEGACY,
     STORAGE_KEY,
     STORAGE_VERSION,
+    TIER_FREE,
+    TIER_LIVE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -299,6 +305,39 @@ def generate_message_id(data: dict[str, Any]) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:24]
 
 
+async def async_install_id(hass: HomeAssistant) -> str:
+    """Random id of this installation, created once."""
+    store = Store(hass, 1, FEED_INSTALL_KEY)
+    install = ((await store.async_load()) or {}).get("id")
+    if not install:
+        install = uuid.uuid4().hex
+        await store.async_save({"id": install})
+    return install
+
+
+class AccountRejected(Exception):
+    """The feed refused the PieperMonitor login or the stored session."""
+
+
+async def _async_post_feed(hass: HomeAssistant, url: str, body: dict[str, Any]) -> dict[str, Any]:
+    session = async_get_clientsession(hass)
+    async with session.post(url, json=body, timeout=aiohttp.ClientTimeout(total=API_TIMEOUT)) as response:
+        if response.status == 401:
+            raise AccountRejected
+        response.raise_for_status()
+        data = await response.json()
+    if not data.get("token"):
+        raise ValueError("PieperMonitor feed gave no token")
+    return data
+
+
+async def async_login(hass: HomeAssistant, email: str, password: str) -> dict[str, Any]:
+    """Log in with a PieperMonitor account: {token, tier, plan, expires, refresh}. The password is not kept."""
+    return await _async_post_feed(
+        hass, FEED_LOGIN_URL, {"install": await async_install_id(hass), "email": email, "password": password}
+    )
+
+
 class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Poll the complete AlarmeringDroid feed once for all config entries.
 
@@ -307,14 +346,26 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """
 
     def __init__(
-        self, hass: HomeAssistant, scan_interval: int = DEFAULT_SCAN_INTERVAL, source: str = SOURCE_LEGACY
+        self,
+        hass: HomeAssistant,
+        scan_interval: int = DEFAULT_SCAN_INTERVAL,
+        source: str = SOURCE_LEGACY,
+        account_refresh: str | None = None,
     ) -> None:
         self.source = source
         # The feed answers 304 while nothing changed; reuse the last messages then.
         self._feed_etag: str | None = None
         self._feed_messages: list[dict[str, Any]] = []
         self._feed_auth: dict[str, str] | None = None
+        self._feed_expires: float | None = None
         self.feed_live: bool | None = None
+        # PieperMonitor account session; None = no account (free tier).
+        self.account_refresh = account_refresh
+        # Feed tier after registering: TIER_LIVE (Plus or Pro) or TIER_FREE; None before that or for legacy.
+        self.tier: str | None = None
+        self.plan: str | None = None
+        # Configured interval; the free tier polls at most every FREE_SCAN_INTERVAL.
+        self._configured_interval = timedelta(seconds=scan_interval)
         # Base interval; backoff during outages starts from it and resets to it.
         self.scan_interval = timedelta(seconds=scan_interval)
         self._seen_ids: set[str] = set()
@@ -333,7 +384,14 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @callback
     def async_set_scan_interval(self, seconds: int) -> None:
         """Apply the configured poll interval (from the integration options)."""
-        self.scan_interval = timedelta(seconds=seconds)
+        self._configured_interval = timedelta(seconds=seconds)
+        self._apply_tier_interval()
+
+    @callback
+    def _apply_tier_interval(self) -> None:
+        free = self.source == SOURCE_FEED and self.tier != TIER_LIVE
+        floor = timedelta(seconds=FREE_SCAN_INTERVAL) if free else timedelta(0)
+        self.scan_interval = max(self._configured_interval, floor)
         self.update_interval = self.scan_interval
 
     def _remember_message_id(self, message_id: str) -> None:
@@ -353,23 +411,41 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         payload = json.dumps({k: [str(x) for x in v] for k, v in query.items() if v}, separators=(",", ":"))
         return await self._fetch_api(API_URL + quote(payload, safe=""))
 
+    async def _register(self, install: str) -> dict[str, Any]:
+        """Token for this installation; with an account its tier follows the account's plan."""
+        if self.account_refresh:
+            try:
+                data = await _async_post_feed(
+                    self.hass, FEED_REGISTER_URL, {"install": install, "refresh": self.account_refresh}
+                )
+            except AccountRejected:
+                # Password changed or account removed: keep working on the free tier and ask to log in again.
+                _LOGGER.warning("PieperMonitor account was not accepted; using the free feed (every 5 minutes)")
+                self.account_refresh = None
+                ir.async_create_issue(
+                    self.hass, DOMAIN, ISSUE_ACCOUNT_REJECTED, is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING, translation_key=ISSUE_ACCOUNT_REJECTED,
+                )
+            else:
+                ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ACCOUNT_REJECTED)
+                return data
+        try:
+            return await _async_post_feed(self.hass, FEED_REGISTER_URL, {"install": install})
+        except AccountRejected as err:
+            raise ValueError("PieperMonitor feed refused this installation") from err
+
     async def _feed_headers(self, *, renew: bool = False) -> dict[str, str]:
-        """Headers with this installation's id and token; registers once per start (the token is stable)."""
-        if self._feed_auth is None or renew:
-            store = Store(self.hass, 1, FEED_INSTALL_KEY)
-            install = ((await store.async_load()) or {}).get("id")
-            if not install:
-                install = uuid.uuid4().hex
-                await store.async_save({"id": install})
-            session = async_get_clientsession(self.hass)
-            async with session.post(
-                FEED_REGISTER_URL, json={"install": install}, timeout=aiohttp.ClientTimeout(total=API_TIMEOUT)
-            ) as response:
-                response.raise_for_status()
-                token = (await response.json()).get("token")
-            if not token:
-                raise ValueError("PieperMonitor feed gave no token")
-            self._feed_auth = {"X-PM-Install": install, "X-PM-Token": token}
+        """Headers with this installation's id and token; registers once per start and again when it expires."""
+        expired = self._feed_expires is not None and dt_util.utcnow().timestamp() >= self._feed_expires - 60
+        if self._feed_auth is None or renew or expired:
+            install = await async_install_id(self.hass)
+            data = await self._register(install)
+            # shortcut: a rotated refresh token in the reply is not stored; sessions do not rotate today.
+            self._feed_auth = {"X-PM-Install": install, "X-PM-Token": data["token"]}
+            self._feed_expires = float(data["expires"]) if data.get("expires") else None
+            self.tier = TIER_LIVE if data.get("tier") == TIER_LIVE else TIER_FREE
+            self.plan = data.get("plan")
+            self._apply_tier_interval()
         return {"User-Agent": "PieperMonitor Home Assistant", "Accept": "application/json", **self._feed_auth}
 
     async def _fetch_feed(self, *, retry: bool = True) -> list[dict[str, Any]]:

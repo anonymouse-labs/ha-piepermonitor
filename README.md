@@ -16,7 +16,8 @@ This is the official Home Assistant integration of **[PieperMonitor](https://www
 - **Map** — alerts with a location from the last hour appear on the standard map card.
 - **Vehicles named** — call signs in fire brigade pager texts (24-0733) are shown with type and post, looked up from a public vehicle database (can be switched off).
 - **Pager text or alert text** — choose per sensor: `P 1 BR woning Rijksweg Echt` or `Brandweer met spoed naar Rijksweg, Echt`.
-- **One poll for everything** — the national feed is fetched once every 30 seconds (adjustable from 30 to 300 under **PieperMonitor → Configure**), however many sensors you have. A longer interval misses nothing: the feed holds the latest ~30 national alerts and every alert is deduplicated.
+- **Free or live** — free alerts arrive every 5 minutes. With a PieperMonitor **Plus** or **Pro** subscription they arrive live (every 30 seconds by default). See [Free and live](#free-and-live).
+- **One poll for everything** — the feed is fetched once for all sensors, however many you have. A longer interval misses nothing: every alert is deduplicated.
 - **No missed or duplicate alerts** — every alert is deduplicated on its unique id and fires exactly one event; each sensor keeps its last 100 alerts across restarts.
 
 ## PieperMonitor website and app
@@ -30,6 +31,29 @@ This is the official Home Assistant integration of **[PieperMonitor](https://www
 3. Go to **Settings → Devices & services → Add integration → PieperMonitor** and set up your first sensor.
 
 Requires Home Assistant 2025.6 or newer.
+
+## Free and live
+
+| | Free | Live |
+|---|---|---|
+| Needs | nothing | a PieperMonitor account with **Plus** or **Pro** |
+| Alerts arrive | every 5 minutes | live, every 30 s by default (30–300 s) |
+| Sensors, follow rules, card, map, events | all | all |
+
+Free needs no account. To get live alerts:
+
+1. Take out **Plus** or **Pro** on [piepermonitor.nl](https://www.piepermonitor.nl) or in the PieperMonitor app.
+2. In Home Assistant, go to **Settings → Devices & services → PieperMonitor → Configure**.
+3. Enter the **same account** you use in the app and on the website: the same e-mail address and password. Home Assistant only sees your subscription through that account. A different account, or no account, stays free.
+4. Click **Submit**. The integration reloads and switches to live. **Logged in** in the same dialog shows the account and whether it is live.
+
+Good to know:
+
+- **Signed up without a password (social login)?** That account has no password yet. Use **Forgot password** on [piepermonitor.nl](https://www.piepermonitor.nl) with the same e-mail address to set one, then log in here.
+- **Your password is not stored.** It is used once to log in; Home Assistant keeps only a session for this installation.
+- **Subscription checked twice a day.** A new or upgraded subscription takes effect right away when you log in again. When it ends, the integration falls back to free within 12 hours.
+- **Changed your password?** Home Assistant shows a repair notice and falls back to free. Log in again under **Configure**.
+- **Log out** under **Configure** removes the account from Home Assistant.
 
 ## Renamed from P2000 Monitor
 
@@ -102,8 +126,9 @@ Under **Settings → Devices & services → PieperMonitor → Configure**:
 
 | Option | Default | Meaning |
 |---|---|---|
-| **Alert source** | PieperMonitor | PieperMonitor gives the same data and interpretation as [piepermonitor.nl](https://www.piepermonitor.nl). *Legacy* is the previous direct source, kept for a while as a fallback. |
-| **Poll interval** | 30 s | How often the national feed is fetched, for all sensors together (30–300 s). The feed is a free service; please keep this modest. |
+| **PieperMonitor account** | none | E-mail and password of your PieperMonitor account, for live alerts. See [Free and live](#free-and-live). |
+| **Alert source** | PieperMonitor | PieperMonitor gives the same data and interpretation as [piepermonitor.nl](https://www.piepermonitor.nl). *Legacy* is the previous direct source; it is deprecated and will be removed in a later version. |
+| **Poll interval** | 30 s | How often alerts are fetched, for all sensors together (30–300 s). Live uses this interval; free is fetched every 5 minutes. |
 | **Look up vehicle names** | on | See [Vehicle names](#vehicle-names) above. |
 
 ## Upgrading from 0.7 or older
@@ -147,7 +172,7 @@ YAML configuration (`sensor: - platform: p2000_monitor`) is no longer supported.
 
 ## Data source
 
-Alerts come from the structured PieperMonitor data feed for public P2000 alerts. The feed only holds the latest ~30 national alerts, which is why every sensor keeps its own history.
+Alerts come from the structured PieperMonitor data feed for public P2000 alerts. The feed holds the alerts of the last few hours; every sensor also keeps its own history.
 
 ## License
 
