@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -20,7 +21,14 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_ACCOUNT_EMAIL,
+    CONF_ACCOUNT_LOGOUT,
+    CONF_ACCOUNT_PASSWORD,
+    CONF_ACCOUNT_REFRESH,
     CONF_ACTIVE_MINUTES,
+    DATA_FEED,
+    TIER_FREE,
+    TIER_LIVE,
     CONF_ALL_SERVICES,
     CONF_BRANDBASE,
     CONF_CAPCODES,
@@ -51,7 +59,7 @@ from .const import (
     SUBENTRY_SENSOR,
     SUBENTRY_WATCH,
 )
-from .coordinator import REGIONS
+from .coordinator import REGIONS, AccountRejected, async_login
 from .enrich import normalize_vehicle
 
 DISCIPLINES = {
@@ -170,11 +178,45 @@ class P2000OptionsFlow(OptionsFlow):
     """Integration-wide options."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        options = self.config_entry.options
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            data = dict(user_input)
+            email = str(data.pop(CONF_ACCOUNT_EMAIL, "") or "").strip()
+            password = data.pop(CONF_ACCOUNT_PASSWORD, "") or ""
+            logout = data.pop(CONF_ACCOUNT_LOGOUT, False)
+            if not logout and options.get(CONF_ACCOUNT_REFRESH) and email == options.get(CONF_ACCOUNT_EMAIL):
+                data[CONF_ACCOUNT_EMAIL] = email
+                data[CONF_ACCOUNT_REFRESH] = options[CONF_ACCOUNT_REFRESH]
+            if not logout and password:
+                if not email:
+                    errors[CONF_ACCOUNT_EMAIL] = "email_required"
+                else:
+                    try:
+                        session = await async_login(self.hass, email, password)
+                    except AccountRejected:
+                        errors["base"] = "invalid_auth"
+                    except (aiohttp.ClientError, TimeoutError, ValueError):
+                        errors["base"] = "cannot_connect"
+                    else:
+                        data[CONF_ACCOUNT_EMAIL] = email
+                        data[CONF_ACCOUNT_REFRESH] = session["refresh"]
+            if not errors:
+                return self.async_create_entry(data=data)
+        account = vol.Schema({
+            vol.Optional(
+                CONF_ACCOUNT_EMAIL, description={"suggested_value": options.get(CONF_ACCOUNT_EMAIL, "")}
+            ): selector.TextSelector(selector.TextSelectorConfig(type=selector.TextSelectorType.EMAIL)),
+            vol.Optional(CONF_ACCOUNT_PASSWORD): selector.TextSelector(
+                selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+            ),
+        })
+        if options.get(CONF_ACCOUNT_REFRESH):
+            account = account.extend({vol.Optional(CONF_ACCOUNT_LOGOUT, default=False): bool})
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
+            errors=errors,
+            data_schema=account.extend({
                 vol.Optional(
                     CONF_SOURCE, default=self.config_entry.options.get(CONF_SOURCE, DEFAULT_SOURCE)
                 ): selector.SelectSelector(
@@ -201,8 +243,19 @@ class P2000OptionsFlow(OptionsFlow):
                     vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                 ),
             }),
-            description_placeholders={"website_url": WEBSITE_URL},
+            description_placeholders={"website_url": WEBSITE_URL, "account_status": self._account_status()},
         )
+
+    def _account_status(self) -> str:
+        email = self.config_entry.options.get(CONF_ACCOUNT_EMAIL)
+        if not self.config_entry.options.get(CONF_ACCOUNT_REFRESH) or not email:
+            return "-"
+        feed = self.hass.data.get(DATA_FEED)
+        tier = getattr(feed, "tier", None)
+        plan = getattr(feed, "plan", None)
+        if tier == TIER_LIVE:
+            return f"{email} (live, {str(plan or '').capitalize()})"
+        return f"{email} ({TIER_FREE})" if tier else email
 
 
 class _NamedSubentryFlow(ConfigSubentryFlow):

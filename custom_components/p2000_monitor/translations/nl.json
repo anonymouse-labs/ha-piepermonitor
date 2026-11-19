@@ -165,18 +165,29 @@
     "step": {
       "init": {
         "title": "PieperMonitor-opties",
-        "description": "Meer over PieperMonitor en de app die eraan komt: [piepermonitor.nl]({website_url})",
+        "description": "Log in met je PieperMonitor-account voor live meldingen. Gebruik hetzelfde account (e-mail en wachtwoord) als in de PieperMonitor-app en op piepermonitor.nl. Live vraagt Plus of Pro; zonder komen meldingen elke 5 minuten binnen.\n\nIngelogd: {account_status}\n\nMeer over PieperMonitor: [piepermonitor.nl]({website_url})",
         "data": {
+          "account_email": "PieperMonitor-account (e-mail)",
+          "account_password": "Wachtwoord",
+          "account_logout": "Uitloggen",
           "source": "Bron van meldingen",
           "brandbase": "Voertuignamen opzoeken",
           "scan_interval": "Poll-interval (seconden)"
         },
         "data_description": {
-          "source": "PieperMonitor geeft dezelfde data en interpretatie als piepermonitor.nl. Legacy is de vorige directe bron, nog even bewaard als terugval.",
+          "account_email": "Hetzelfde account als in de PieperMonitor-app en op piepermonitor.nl.",
+          "account_password": "Alleen om één keer in te loggen; het wordt niet bewaard. Aangemeld zonder wachtwoord (via sociale login)? Stel er eerst een in via 'Wachtwoord vergeten' op piepermonitor.nl.",
+          "account_logout": "Haalt het account uit Home Assistant. Meldingen komen dan elke 5 minuten binnen.",
+          "source": "PieperMonitor geeft dezelfde data en interpretatie als piepermonitor.nl. Legacy is de vorige directe bron; die is verouderd en verdwijnt in een latere versie.",
           "brandbase": "Zoekt bij brandweermeldingen het type en de post van de gealarmeerde voertuigen op (bijvoorbeeld 24-0733 → Tankautospuit, Regionaal) in een openbare voertuigdatabase. Alleen regio's waarvan je meldingen ontvangt, hooguit één keer per week.",
-          "scan_interval": "Hoe vaak de landelijke P2000-feed wordt opgehaald, voor alle sensoren samen (30–300 s). Langer mist geen meldingen: de feed bevat de laatste ~30 meldingen, meestal ruim 20 minuten."
+          "scan_interval": "Hoe vaak meldingen worden opgehaald, voor alle sensoren samen (30–300 s). Live (Plus of Pro) gebruikt dit interval; zonder Plus of Pro wordt de PieperMonitor-bron elke 5 minuten opgehaald."
         }
       }
+    },
+    "error": {
+      "invalid_auth": "E-mail of wachtwoord klopt niet.",
+      "cannot_connect": "PieperMonitor is niet bereikbaar. Probeer het later opnieuw.",
+      "email_required": "Vul het e-mailadres van je account in."
     }
   },
   "entity": {
@@ -196,6 +207,12 @@
       "active": {
         "name": "Actief"
       }
+    }
+  },
+  "issues": {
+    "account_rejected": {
+      "title": "Log opnieuw in bij PieperMonitor",
+      "description": "Je PieperMonitor-account werd niet geaccepteerd (bijvoorbeeld na een nieuw wachtwoord). Meldingen komen nu elke 5 minuten binnen. Log opnieuw in via Instellingen > Apparaten en diensten > PieperMonitor > Configureren."
     }
   }
 }
