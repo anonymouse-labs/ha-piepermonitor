@@ -42,7 +42,7 @@ Requires Home Assistant 2025.6 or newer.
 
 Free needs no account. To get live alerts:
 
-1. Take out **Plus** or **Pro** on [piepermonitor.nl](https://www.piepermonitor.nl) or in the PieperMonitor app.
+1. Have **Plus** or **Pro** on your PieperMonitor account. Subscriptions open soon on [piepermonitor.nl](https://www.piepermonitor.nl) and in the PieperMonitor app; follow the website for news.
 2. In Home Assistant, go to **Settings → Devices & services → PieperMonitor → Configure**.
 3. Enter the **same account** you use in the app and on the website: the same e-mail address and password. Home Assistant only sees your subscription through that account. A different account, or no account, stays free.
 4. Click **Submit**. The integration reloads and switches to live. **Logged in** in the same dialog shows the account and whether it is live.

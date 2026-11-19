@@ -4,6 +4,7 @@
 - Gratis: meldingen uit de PieperMonitor-bron komen elke 5 minuten binnen. Daarvoor heb je geen account nodig.
 - Live: met een PieperMonitor-abonnement **Plus** of **Pro** komen meldingen live binnen, standaard elke 30 seconden (30–300 s instelbaar).
 - Alle sensoren, volg-regels, de kaart, de dashboardkaart en de events werken in beide gevallen.
+- Plus en Pro kun je binnenkort afsluiten op [piepermonitor.nl](https://www.piepermonitor.nl) en in de app. Volg de website voor nieuws.
 
 ### Inloggen
 - Ga naar *Instellingen* → *Apparaten en diensten* → *PieperMonitor* → **Configureren** en log in met **hetzelfde account** als in de PieperMonitor-app en op [piepermonitor.nl](https://www.piepermonitor.nl). Alleen via dat account ziet Home Assistant je abonnement.

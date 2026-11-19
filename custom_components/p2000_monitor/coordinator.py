@@ -426,6 +426,11 @@ class P2000FeedCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self.hass, DOMAIN, ISSUE_ACCOUNT_REJECTED, is_fixable=False,
                     severity=ir.IssueSeverity.WARNING, translation_key=ISSUE_ACCOUNT_REJECTED,
                 )
+            except (aiohttp.ClientResponseError, ValueError) as err:
+                # Account service hiccup: keep the session, use a free token now and try the account again later.
+                _LOGGER.warning("PieperMonitor account check failed (%s); free feed until the next check", err)
+                data = await _async_post_feed(self.hass, FEED_REGISTER_URL, {"install": install})
+                return {**data, "expires": dt_util.utcnow().timestamp() + FREE_SCAN_INTERVAL * 2}
             else:
                 ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ACCOUNT_REJECTED)
                 return data

@@ -133,6 +133,7 @@ async def test_options_login_stores_refresh_not_password(hass, aioclient_mock):
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {**form, "account_email": "a@b.nl", "account_password": "pw"}
     )
+    await hass.async_block_till_done()  # the options change reloads the entry
     assert result["type"] == "create_entry"
     assert entry.options["account_refresh"] == "r1" and entry.options["account_email"] == "a@b.nl"
     assert "account_password" not in entry.options
